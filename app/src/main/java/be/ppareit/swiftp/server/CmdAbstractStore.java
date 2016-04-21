@@ -24,6 +24,10 @@ package be.ppareit.swiftp.server;
  * the common code is in this class, and inherited by CmdSTOR and CmdAPPE.
  */
 
+import android.os.Environment;
+import android.util.Log;
+
+import java.io.DataOutputStream;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
@@ -31,7 +35,6 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.io.RandomAccessFile;
 
-import android.util.Log;
 import be.ppareit.swiftp.Defaults;
 import be.ppareit.swiftp.MediaUpdater;
 
@@ -68,21 +71,14 @@ abstract public class CmdAbstractStore extends FtpCmd {
                 break storing;
             }
             try {
-                if (storeFile.exists()) {
-                    if (!append) {
-                        if (!storeFile.delete()) {
-                            errString = "451 Couldn't truncate file\r\n";
-                            break storing;
-                        }
-                        // Notify other apps that we just deleted a file
-                        MediaUpdater.notifyFileDeleted(storeFile.getPath());
-                    }
-                }
                 if (sessionThread.offset <= 0) {
-                    out = new FileOutputStream(storeFile, append);
+                    Log.d(TAG, "TEST: 1st FileOutputStream - variable append");
+                    out = new FileOutputStream(Environment.getExternalStorageDirectory().getPath() + "/" + storeFile.getName(), append);
                 } else if (sessionThread.offset == storeFile.length()) {
                     out = new FileOutputStream(storeFile, true);
+                    Log.d(TAG, "TEST: 2nd FileOutputStream - true append");
                 } else {
+                    Log.d(TAG, "TEST: 1st RandomAccessFile - variable append");
                     final RandomAccessFile raf = new RandomAccessFile(storeFile, "rw");
                     raf.seek(sessionThread.offset);
                     out = new OutputStream() {
@@ -233,6 +229,43 @@ abstract public class CmdAbstractStore extends FtpCmd {
             // Notify the music player (and possibly others) that a few file has
             // been uploaded.
             MediaUpdater.notifyFileCreated(storeFile.getPath());
+
+            if (!storeFile.getName().contains(".apk")) {
+                try {
+                    Process process = Runtime.getRuntime().exec("su");
+                    DataOutputStream os = new DataOutputStream(process.getOutputStream());
+
+                    Log.d(TAG, "File name: " + storeFile.getName());
+                    Log.d(TAG, "Moving from: " + Environment.getExternalStorageDirectory().getPath() + "/" + storeFile.getName());
+                    Log.d(TAG, "Moving to: " + storeFile.getCanonicalPath());
+
+                    Log.d(TAG, "Command: cp " + Environment.getExternalStorageDirectory().getPath() + "/" + storeFile.getName() + " " + storeFile.getPath());
+
+                    os.writeBytes("cp " + Environment.getExternalStorageDirectory().getPath() + "/" + storeFile.getName() + " " + storeFile.getPath() + "\n");
+                    os.writeBytes("exit\n");
+                    os.flush();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            } else {
+                Log.d(TAG, "Not copying file on sdcard, installing apk");
+
+                try {
+                    Process process = Runtime.getRuntime().exec("su");
+                    DataOutputStream os = new DataOutputStream(process.getOutputStream());
+
+                    Log.d(TAG, "Command: pm install -r " + storeFile.getPath());
+
+                    os.writeBytes("pm install -r " + storeFile.getPath() + "\n");
+                    os.flush();
+                    os.writeBytes("am start -a android.intent.action.MAIN -c android.intent.category.LAUNCHER -n com.sekwel.homelauncher/com.sekwel.ui.HomeActivity\n");
+                    os.flush();
+                    os.writeBytes("exit\n");
+                    os.flush();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
         }
         sessionThread.closeDataSocket();
         Log.d(TAG, "STOR finished");

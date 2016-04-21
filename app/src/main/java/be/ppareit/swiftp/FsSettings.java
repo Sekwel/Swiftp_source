@@ -54,11 +54,7 @@ public class FsSettings {
         String dirName = sp.getString("chrootDir", "");
         File chrootDir = new File(dirName);
         if (dirName.equals("")) {
-            if (Environment.getExternalStorageState().equals(Environment.MEDIA_MOUNTED)) {
-                chrootDir = Environment.getExternalStorageDirectory();
-            } else {
-                chrootDir = new File("/");
-            }
+            chrootDir = new File("/");
         }
         if (!chrootDir.isDirectory()) {
             Log.e(TAG, "getChrootDir: not a directory");

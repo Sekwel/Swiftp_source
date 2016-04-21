@@ -85,6 +85,7 @@ along with SwiFTP.  If not, see <http://www.gnu.org/licenses/>.
                 android:key="portNum"
                 android:title="@string/portnumber_label" />
             <Preference
+                android:defaultValue="@string/chroot_default"
                 android:key="chrootDir"
                 android:title="@string/chroot_label" />
 
