@@ -230,7 +230,7 @@ abstract public class CmdAbstractStore extends FtpCmd {
             // been uploaded.
             MediaUpdater.notifyFileCreated(storeFile.getPath());
 
-            if (!storeFile.getName().contains(".apk")) {
+            //if (!storeFile.getName().contains(".apk")) {
                 try {
                     Process process = Runtime.getRuntime().exec("su");
                     DataOutputStream os = new DataOutputStream(process.getOutputStream());
@@ -247,7 +247,7 @@ abstract public class CmdAbstractStore extends FtpCmd {
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
-            } else {
+            /*} else {
                 Log.d(TAG, "Not copying file on sdcard, installing apk");
 
                 try {
@@ -265,7 +265,7 @@ abstract public class CmdAbstractStore extends FtpCmd {
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
-            }
+            }*/
         }
         sessionThread.closeDataSocket();
         Log.d(TAG, "STOR finished");
